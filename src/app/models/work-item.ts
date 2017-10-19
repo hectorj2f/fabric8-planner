@@ -4,75 +4,57 @@ import { Comments, Comment } from './comment';
 import { Link } from './link';
 import { User } from 'ngx-login-client';
 import { IterationModel } from './iteration.model';
+import { LabelModel } from './label.model';
 
 export class WorkItem {
-  attributes: WorkItemAttributes;
+  hasChildren?: boolean;
+  attributes: object = {};
   id: string;
-  relationships: WorkItemRelations;
+  number?: number;
+  relationships?: WorkItemRelations;
   type: string;
   relationalData?: RelationalData;
-  links: {
+  links?: {
     self: string;
-    sourceLinkTypes: string;
-    targetLinkTypes: string;
   };
-}
-
-export class WorkItemAttributes {
-  'system.created_at': string;
-  'system.description': any;
-  'system.description.rendered': string;
-  'system.remote_item_id': string;
-  'system.state': string;
-  'system.title': string;
-  'version': number;
-  'previousitem': string | number;
-  'nextitem': string | number;
-  'order': number | string;
 }
 
 export class WorkItemRelations {
-  area: {
-    data: {
-      id: string,
-      type: string
-    }
+  area?: {
+    data?: AreaModel
   };
-  assignees: {
-    data: {
-      id: string,
-      type: string
-    }[]
+  assignees?: {
+    data?: User[]
   };
-  baseType: {
-    data: {
-      id: string;
-      type: string;
-    }
+  labels?: {
+    data?: LabelModel[];
   };
-  childs?: {
+  baseType?: {
+    data: WorkItemType;
+  };
+  children?: {
     links: {
-      self: string;
       related: string;
+    };
+    meta: {
+      hasChildren: boolean;
     };
   };
   comments?: {
+    data?: Comment[];
     links: {
       self: string;
       related: string;
     };
-  };
-  creator: {
-    data: {
-      id: string,
-      type: string
+    meta?: {
+      totalCount?: number;
     }
   };
-  iteration: {
-    data: {
-      id: string,
-      type: string
-    }
+  creator?: {
+    data: User;
+  };
+  iteration?: {
+    data?: IterationModel;
   };
   codebase?: {
     links: {
@@ -88,6 +70,7 @@ export class RelationalData {
   creator?: User;
   comments?: Comment[];
   assignees?: User[];
+  labels?: LabelModel[];
   linkDicts?: LinkDict[];
   iteration?: IterationModel;
   totalLinkCount?: number;

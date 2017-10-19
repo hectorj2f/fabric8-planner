@@ -1,83 +1,140 @@
-import { BrowserModule } from '@angular/platform-browser';
+import './rxjs-extensions';
+
+import { ModuleWithProviders, NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpModule } from '@angular/http';
-import { NgModule, ApplicationRef } from '@angular/core';
-import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
+import { HttpModule, Http, RequestOptions, XHRBackend } from '@angular/http';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+// FIXME: do we really need to have this modules on top-level?
+import { BsDropdownConfig, BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { TooltipConfig, TooltipModule } from 'ngx-bootstrap/tooltip';
+import { TabsModule } from 'ngx-bootstrap';
+import { TruncateModule } from 'ng2-truncate';
 
-// App is our top level component
-import { AppRoutingModule } from './app.routing.module';
-import { AppComponent } from './app.component';
-import { HomeComponent } from './home';
-
-// ng2 dependencies
-import { DropdownModule } from 'ngx-dropdown';
-import { TabsModule } from 'ng2-bootstrap/components/tabs';
+import { Broadcaster, Logger, Notifications } from 'ngx-base';
+import { Spaces } from 'ngx-fabric8-wit';
 import { ModalModule } from 'ngx-modal';
-import { TooltipModule } from 'ng2-bootstrap/components/tooltip';
+import { AuthenticationService, UserService, HttpService as HttpServiceLGC } from 'ngx-login-client';
 
-// shared components
-import { GlobalSettings } from './shared/globals';
-import { Settings } from 'fabric8-shared-services';
-import {
-  AuthenticationService,
-  Broadcaster,
-  Logger,
-  UserService
-} from 'ngx-login-client';
-
-// fabric8 components - services
-import { LoginService } from 'fabric8-planner';
-import { WorkItemService } from 'fabric8-planner';
+// Mock data
 import { MockDataService } from 'fabric8-planner';
+import { MockHttp } from 'fabric8-planner';
 
-// fabric8 components - components
-import { WorkItemModule } from 'fabric8-planner';
+// Shared
+import { GlobalSettings } from './shared/globals';
+import { SpacesService } from './services/spaces.service';
+import { authApiUrlProvider } from './shared/auth-api.provider';
+import { ssoApiUrlProvider } from './shared/sso-api.provider';
+import { witApiUrlProvider } from './shared/wit-api.provider';
+import { realmProvider } from './shared/realm-token.provider';
 
+// Header
+import { HeaderComponent } from './components/header/header.component';
 
-/**
- * `AppModule` is the main entry point into Angular2's bootstraping process
- */
+// Login
+import { LoginComponent } from './components/login/login.component';
+import { LoginService } from './services/login.service';
+
+// App components
+import { AppComponent } from './app.component';
+import { AppRoutingModule } from './app-routing.module';
+
+// conditionally import the inmemory resource module
+let serviceImports: Array<any[] | any | ModuleWithProviders>;
+let providers: any[] = [
+  GlobalSettings,
+  serviceImports
+];
+
+// The inmemory environment variable is checked and if present then the in-memory dataset is added.
+if (process.env.ENV == 'inmemory') {
+  serviceImports = [
+    BsDropdownConfig,
+    Logger,
+    AuthenticationService,
+    Broadcaster,
+    LoginService,
+    UserService,
+    MockDataService,
+    authApiUrlProvider,
+    Notifications,
+    {
+      provide: Spaces,
+      useExisting: SpacesService
+    },
+    TooltipConfig
+  ];
+  providers = [
+    BsDropdownConfig,
+
+    GlobalSettings,
+    witApiUrlProvider,
+    realmProvider,
+    serviceImports,
+    SpacesService,
+    ssoApiUrlProvider,
+    MockHttp,
+    {
+      provide: HttpServiceLGC,
+      useExisting: MockHttp
+    },
+    {
+      provide: Http,
+      useExisting: HttpServiceLGC
+    },
+    TooltipConfig
+  ];
+} else {
+  serviceImports = [
+    Logger,
+    AuthenticationService,
+    Broadcaster,
+    LoginService,
+    UserService,
+    MockDataService,
+    authApiUrlProvider,
+    Notifications,
+    {
+      provide: Spaces,
+      useExisting: SpacesService
+    },
+    SpacesService,
+    ssoApiUrlProvider,
+  ];
+  providers = [
+    GlobalSettings,
+    witApiUrlProvider,
+    realmProvider,
+    serviceImports,
+    {
+      provide: Http,
+      useClass: HttpServiceLGC
+    }
+  ];
+}
+
 @NgModule({
-  bootstrap: [ AppComponent ],
-  declarations: [
-    AppComponent,
-    HomeComponent
-  ],
-  imports: [ // import Angular's modules
+  imports: [
     AppRoutingModule,
+    BrowserAnimationsModule,
     BrowserModule,
+    BsDropdownModule.forRoot(),
     FormsModule,
-    HttpModule,
-    DropdownModule,
     HttpModule,
     ModalModule,
     TabsModule,
-    TooltipModule,
-    WorkItemModule
+    TooltipModule.forRoot(),
+    TruncateModule
   ],
-  providers: [ // expose our Services and Providers into Angular's dependency injection
-    Logger,
-    AuthenticationService,
-    LoginService,
-    UserService,
-    WorkItemService,
-    MockDataService,
-    Settings,
-    Broadcaster
-  ]
+  declarations: [
+    AppComponent,
+    HeaderComponent,
+    LoginComponent
+  ],
+  providers: providers,
+  bootstrap: [ AppComponent ]
 })
 export class AppModule {
-
-  constructor(
-    public appRef: ApplicationRef,
-    public mockDataService: MockDataService,
-    public settingsService: Settings,
-    private globalSettings: GlobalSettings
-  ) {
-    console.log(mockDataService);
-    console.log(settingsService);
-    this.globalSettings.setTestMode(process.env.ENV == 'inmemory' ? true : false);
-  }
-
+  constructor(private globalSettings: GlobalSettings) {}
 }
